@@ -200,7 +200,7 @@ that applies to you and follow the directions there.
 
 # OTOS Localizer
 * First, you'll need the OTOS connected to an I2C port on a hub. Make sure the film on the sensor is removed.
-* Then, go to `OTOSLocalizer.java`. First, in the constructor, go to where it tells you to replace 
+* Then, go to `OTOSLocalizer.java`. First, in the constructor, go to where it tells you to replace
   the current statement with your OTOS port in the constructor. Replace the `deviceName` parameter
   with the name of the port that the OTOS is connected to.
 * Next, enter in the position of your OTOS relative to the center of the wheels of the robot. The
