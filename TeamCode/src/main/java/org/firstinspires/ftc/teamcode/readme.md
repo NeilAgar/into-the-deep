@@ -14,7 +14,7 @@ Sample opmodes exist in the FtcRobotController module.
 To locate these samples, find the FtcRobotController module in the "Project/Android" tab.
 
 Expand the following tree elements:
- FtcRobotController/java/org.firstinspires.ftc.robotcontroller/external/samples
+FtcRobotController/java/org.firstinspires.ftc.robotcontroller/external/samples
 
 ### Naming of Samples
 
@@ -28,21 +28,21 @@ The class names will follow a naming convention which indicates the purpose of e
 The prefix of the name will be one of the following:
 
 Basic:  	This is a minimally functional OpMode used to illustrate the skeleton/structure
-            of a particular style of OpMode.  These are bare bones examples.
+of a particular style of OpMode.  These are bare bones examples.
 
 Sensor:    	This is a Sample OpMode that shows how to use a specific sensor.
-            It is not intended to drive a functioning robot, it is simply showing the minimal code
-            required to read and display the sensor values.
+It is not intended to drive a functioning robot, it is simply showing the minimal code
+required to read and display the sensor values.
 
 Robot:	    This is a Sample OpMode that assumes a simple two-motor (differential) drive base.
-            It may be used to provide a common baseline driving OpMode, or
-            to demonstrate how a particular sensor or concept can be used to navigate.
+It may be used to provide a common baseline driving OpMode, or
+to demonstrate how a particular sensor or concept can be used to navigate.
 
 Concept:	This is a sample OpMode that illustrates performing a specific function or concept.
-            These may be complex, but their operation should be explained clearly in the comments,
-            or the comments should reference an external doc, guide or tutorial.
-            Each OpMode should try to only demonstrate a single concept so they are easy to
-            locate based on their name.  These OpModes may not produce a drivable robot.
+These may be complex, but their operation should be explained clearly in the comments,
+or the comments should reference an external doc, guide or tutorial.
+Each OpMode should try to only demonstrate a single concept so they are easy to
+locate based on their name.  These OpModes may not produce a drivable robot.
 
 After the prefix, other conventions will apply:
 

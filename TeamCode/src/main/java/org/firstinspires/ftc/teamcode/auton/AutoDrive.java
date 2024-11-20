@@ -4,29 +4,95 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
+import org.firstinspires.ftc.teamcode.pedroPathing.util.Timer;
 
 class AutoDrive {
-    enum ShoulderLevel {
-        SPECIMEN
-    }
-    public Follower follower;
-    DcMotor leftWorm;
-    DcMotor rightWorm;
-    private Telemetry telemetry;
 
-    public AutoDrive(HardwareMap hardwareMap, Telemetry t) {
+    public Follower follower;
+    public DcMotor outtakeSlide;
+    public int outtakeSlideError = 20;
+    public Servo outtakeFlipper;
+
+    public Servo intakeExtension;
+    public Servo wrist;
+    public CRServo leftIntake, rightIntake;
+
+    Action intake, outtake, ascent;
+
+    public AutoDrive(HardwareMap hardwareMap) {
         follower = new Follower(hardwareMap);
-        leftWorm = hardwareMap.dcMotor.get("leftWorm");
-        rightWorm = hardwareMap.dcMotor.get("rightWorm");
-        telemetry = t;
+
+        outtakeSlide = hardwareMap.dcMotor.get("outtakeSlide");
+
+        outtakeSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        outtakeSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        intakeExtension = hardwareMap.get(Servo.class, "intakeExtension");
+        wrist = hardwareMap.get(Servo.class, "wrist");
+
+        outtakeFlipper = hardwareMap.get(Servo.class, "outtakeFlipper");
+
+        rightIntake = hardwareMap.get(CRServo.class, "rightIntake");
+        leftIntake = hardwareMap.get(CRServo.class, "leftIntake");
+        leftIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+    public Action intake() {
+        return new SequentialAction(
+            setServoPos(wrist, 1),
+            new SleepAction(0.5),
+            spinIntake(1),
+            new SleepAction(0.8),
+            spinIntake(0)
+        );
+    }
+
+    public Action transfer() {
+        return new SequentialAction(
+            setServoPos(wrist, 0),
+            new SleepAction(0.5),
+            spinIntake(1),
+            new SleepAction(1),
+            spinIntake(0)
+        );
+    }
+
+    public Action outtake() {
+        return new SequentialAction(
+            setServoPos(outtakeFlipper, 0),
+            new SleepAction(1),
+            setServoPos(outtakeFlipper, 1)
+        );
+    }
+
+    public Action raiseSlide() {
+        return new SequentialAction(
+            setServoPos(wrist, 1),
+            new SleepAction(0.5),
+            new ParallelAction(
+                moveOuttakeSlide(-4750),
+                new SequentialAction(
+                    new SleepAction(1),
+                    setServoPos(wrist, 0)
+                )
+            )
+        );
+    }
+
+    public Action dropSlide() {
+        return moveOuttakeSlide(0);
     }
 
     public Action followPath(PathChain path) {
@@ -41,7 +107,8 @@ class AutoDrive {
                 }
 
                 updateFollower();
-                updateTelemetry();
+                follower.getDashboardPoseTracker().update();
+                updateFollowerTelemetry(packet);
 
                 return follower.isBusy();
             }
@@ -52,34 +119,59 @@ class AutoDrive {
         follower.update();
     }
 
-    public void updateTelemetry() {
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData( "heading", follower.getPose().getHeading());
-        telemetry.addData( "turn direction", MathFunctions.getTurnDirection(0, Math.PI * 1.5));
-        telemetry.update();
+    public void updateFollowerTelemetry(TelemetryPacket packet) {
+        packet.put("x", follower.getPose().getX());
+        packet.put("y", follower.getPose().getY());
+        packet.put("heading", follower.getPose().getHeading());
+        packet.put("turn direction", MathFunctions.getTurnDirection(0, Math.PI * 1.5));
+        packet.put("follower busy", follower.isBusy());
     }
 
-    public Action rotateShoulder(ShoulderLevel shoulderLevel) {
+    public Action moveOuttakeSlide(int slideEnc) {
         return new Action() {
-            ElapsedTime timer = new ElapsedTime();
+            private boolean initialized = false;
+            private Timer timer;
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                if (shoulderLevel == ShoulderLevel.SPECIMEN) {
-                    if (timer.milliseconds() < 1000) {
-                        leftWorm.setPower(0.5);
-                        rightWorm.setPower(0.5);
-                        return true;
-                    } else {
-                        leftWorm.setPower(0);
-                        rightWorm.setPower(0);
-                        return false;
-                    }
+                if (!initialized) {
+                    outtakeSlide.setTargetPosition(slideEnc);
+                    outtakeSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    if (slideEnc > outtakeSlide.getCurrentPosition()) outtakeSlide.setPower(1);
+                    else outtakeSlide.setPower(-1);
+
+                    timer = new Timer();
+                    initialized = true;
                 }
 
-                return false;
+                packet.put("slideEnc", slideEnc);
+                packet.put("current slide position", outtakeSlide.getCurrentPosition());
+                packet.put("slide timer (ms)", timer.getElapsedTime());
+                return timer.getElapsedTime() < 6500 &&
+                    Math.abs(outtakeSlide.getCurrentPosition() - slideEnc) > outtakeSlideError;
             }
+        };
+    }
+
+    public Action resetOuttakeSlide() {
+        return packet -> {
+            outtakeSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            return false;
+        };
+    }
+
+    public Action setServoPos(Servo servo, int pos) {
+        return packet -> {
+            servo.setPosition(pos);
+            return false;
+        };
+    }
+
+    public Action spinIntake(double power) {
+        return packet -> {
+            leftIntake.setPower(power);
+            rightIntake.setPower(power);
+            return false;
         };
     }
 }
