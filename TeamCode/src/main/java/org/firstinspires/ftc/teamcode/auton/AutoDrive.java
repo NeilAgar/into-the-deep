@@ -9,6 +9,7 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -22,6 +23,7 @@ class AutoDrive {
 
     public Follower follower;
     public DcMotor outtakeSlide;
+    public DcMotor outtakeSlide2;
     public int outtakeSlideError = 20;
     public Servo outtakeFlipper;
 
@@ -35,6 +37,7 @@ class AutoDrive {
         follower = new Follower(hardwareMap);
 
         outtakeSlide = hardwareMap.dcMotor.get("outtakeSlide");
+        outtakeSlide2 = hardwareMap.dcMotor.get("outtakeSlide2");
 
         outtakeSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         outtakeSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -79,15 +82,10 @@ class AutoDrive {
 
     public Action raiseSlide() {
         return new SequentialAction(
-            setServoPos(wrist, 1),
+            setServoPos(wrist, 0.1),
             new SleepAction(0.5),
-            new ParallelAction(
-                moveOuttakeSlide(-4750),
-                new SequentialAction(
-                    new SleepAction(1),
-                    setServoPos(wrist, 0)
-                )
-            )
+            moveOuttakeSlide(-3100),
+            setServoPos(wrist, 0)
         );
     }
 
@@ -137,8 +135,14 @@ class AutoDrive {
                 if (!initialized) {
                     outtakeSlide.setTargetPosition(slideEnc);
                     outtakeSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    if (slideEnc > outtakeSlide.getCurrentPosition()) outtakeSlide.setPower(1);
-                    else outtakeSlide.setPower(-1);
+                    if (slideEnc > outtakeSlide.getCurrentPosition()) {
+                        outtakeSlide2.setPower(1);
+                        outtakeSlide.setPower(1);
+                    } else {
+                        outtakeSlide2.setPower(-1);
+                        outtakeSlide.setPower(-1);
+                    }
+
 
                     timer = new Timer();
                     initialized = true;
@@ -147,8 +151,13 @@ class AutoDrive {
                 packet.put("slideEnc", slideEnc);
                 packet.put("current slide position", outtakeSlide.getCurrentPosition());
                 packet.put("slide timer (ms)", timer.getElapsedTime());
-                return timer.getElapsedTime() < 6500 &&
-                    Math.abs(outtakeSlide.getCurrentPosition() - slideEnc) > outtakeSlideError;
+                if (timer.getElapsedTime() > 6500 ||
+                        Math.abs(outtakeSlide.getCurrentPosition() - slideEnc) < outtakeSlideError) {
+                    outtakeSlide.setPower(0);
+                    outtakeSlide2.setPower(0);
+                    return false;
+                }
+                return true;
             }
         };
     }
@@ -160,7 +169,7 @@ class AutoDrive {
         };
     }
 
-    public Action setServoPos(Servo servo, int pos) {
+    public Action setServoPos(Servo servo, double pos) {
         return packet -> {
             servo.setPosition(pos);
             return false;
@@ -171,6 +180,13 @@ class AutoDrive {
         return packet -> {
             leftIntake.setPower(power);
             rightIntake.setPower(power);
+            return false;
+        };
+    }
+
+    public Action setFollowerMaxPower(double power) {
+        return packet -> {
+            follower.setMaxPower(power);
             return false;
         };
     }

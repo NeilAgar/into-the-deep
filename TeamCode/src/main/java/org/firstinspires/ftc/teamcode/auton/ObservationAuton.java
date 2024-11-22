@@ -35,10 +35,12 @@ public final class ObservationAuton extends LinearOpMode {
         rightRear = hardwareMap.get(DcMotorEx.class, rightRearMotorName);
         rightFront = hardwareMap.get(DcMotorEx.class, rightFrontMotorName);
 
-        leftFront.setPower(1);
-        leftRear.setPower(1);
-        rightFront.setPower(1);
-        rightRear.setPower(1);
+        waitForStart();
+
+        leftFront.setPower(0.2);
+        leftRear.setPower(0.2);
+        rightFront.setPower(0.2);
+        rightRear.setPower(0.2);
 
         Actions.runBlocking(new SleepAction(10));
 

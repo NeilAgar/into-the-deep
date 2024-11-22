@@ -34,9 +34,9 @@ public final class BucketAuton extends LinearOpMode {
         drive.outtakeFlipper.setPosition(1);
 
         Pose start = new Pose(0, 0); // 137, 36
-        Pose bucket = new Pose(14.5, 14.5);
-        Pose sampleOnePos = new Pose(14.9, 14.5);
-        Pose bucketOnePos = new Pose(14.65, 14.65);
+        Pose bucket = new Pose(9, 19);
+        Pose sampleOnePos = new Pose(17.5, 16.5);
+        Pose bucketOnePos = new Pose(9, 20);
         Pose sampleTwoPos = new Pose(16.35, 16.55);
         Pose bucketTwoPos = new Pose(14.55, 18.75);
 
@@ -87,10 +87,10 @@ public final class BucketAuton extends LinearOpMode {
 
         park = drive.follower.pathBuilder()
                 .addPath(new BezierCurve(
-                        new Point(bucketTwoPos),
-                        new Point(14.4, 0, Point.CARTESIAN),
+                        new Point(bucketOnePos),
+                        new Point(14.65, 0, Point.CARTESIAN),
                         new Point(50, 12, Point.CARTESIAN),
-                        new Point(50, -2, Point.CARTESIAN)
+                        new Point(50, -6, Point.CARTESIAN)
                 ))
                 .setConstantHeadingInterpolation(Math.toRadians(90))
                 .build();
@@ -124,23 +124,26 @@ public final class BucketAuton extends LinearOpMode {
             ),
             drive.outtake(),
 
+//            new ParallelAction(
+//                new SequentialAction(
+//                    drive.followPath(sampleTwo),
+//                    drive.intake()
+//                ),
+//                drive.dropSlide()
+//            ),
+//            drive.transfer(),
+//
+//            new ParallelAction(
+//                drive.followPath(bucketTwo),
+//                drive.raiseSlide()
+//            ),
+//            drive.outtake(),
+
             new ParallelAction(
                 new SequentialAction(
-                    drive.followPath(sampleTwo),
-                    drive.intake()
+                    drive.setFollowerMaxPower(0.6),
+                    drive.followPath(park)
                 ),
-                drive.dropSlide()
-            ),
-            drive.transfer(),
-
-            new ParallelAction(
-                drive.followPath(bucketTwo),
-                drive.raiseSlide()
-            ),
-            drive.outtake(),
-
-            new ParallelAction(
-                drive.followPath(park),
                 drive.dropSlide(),
                 new SequentialAction(
                     drive.setServoPos(drive.wrist, 1),
