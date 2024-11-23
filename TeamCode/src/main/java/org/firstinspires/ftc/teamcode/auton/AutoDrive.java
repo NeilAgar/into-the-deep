@@ -8,6 +8,7 @@ import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -29,7 +30,9 @@ class AutoDrive {
 
     public Servo intakeExtension;
     public Servo wrist;
+    public Servo leftClaw,rightClaw;
     public CRServo leftIntake, rightIntake;
+    public ColorSensor colorSensor;
 
     Action intake, outtake, ascent;
 
@@ -46,19 +49,42 @@ class AutoDrive {
         wrist = hardwareMap.get(Servo.class, "wrist");
 
         outtakeFlipper = hardwareMap.get(Servo.class, "outtakeFlipper");
+        colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
         rightIntake = hardwareMap.get(CRServo.class, "rightIntake");
         leftIntake = hardwareMap.get(CRServo.class, "leftIntake");
         leftIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        leftClaw = hardwareMap.get(Servo.class, "leftClaw");
+        rightClaw = hardwareMap.get(Servo.class, "rightClaw");
+        rightClaw.setPosition(.3);
+        leftClaw.setPosition(.53);
+    }
+
+    public Action closeClaw() {
+        return packet -> {
+            rightClaw.setPosition(.65);
+            leftClaw.setPosition(.2);
+            return false;
+        };
+    }
+
+    public Action openClaw() {
+        return packet -> {
+            rightClaw.setPosition(.3);
+            leftClaw.setPosition(.53);
+            return false;
+        };
     }
 
     public Action intake() {
         return new SequentialAction(
-            setServoPos(wrist, 1),
+            setServoPos(wrist, 0.84),
             new SleepAction(0.5),
-            spinIntake(1),
-            new SleepAction(0.8),
-            spinIntake(0)
+            colorSensingIntake()
+//            spinIntake(1),
+//            new SleepAction(0.5),
+//            spinIntake(0)
         );
     }
 
@@ -67,7 +93,7 @@ class AutoDrive {
             setServoPos(wrist, 0),
             new SleepAction(0.5),
             spinIntake(1),
-            new SleepAction(1),
+            new SleepAction(3),
             spinIntake(0)
         );
     }
@@ -80,11 +106,11 @@ class AutoDrive {
         );
     }
 
-    public Action raiseSlide() {
+    public Action raiseSlide(int pos) {
         return new SequentialAction(
             setServoPos(wrist, 0.1),
             new SleepAction(0.5),
-            moveOuttakeSlide(-3100),
+            moveOuttakeSlide(pos),
             setServoPos(wrist, 0)
         );
     }
@@ -188,6 +214,32 @@ class AutoDrive {
         return packet -> {
             follower.setMaxPower(power);
             return false;
+        };
+    }
+
+    public Action colorSensingIntake() {
+        return new Action() {
+            private boolean initialized = false;
+            private Timer timer = new Timer();
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if(!initialized){
+                    timer.resetTimer();
+                    leftIntake.setPower(1);
+                    rightIntake.setPower(1);
+                    initialized = true;
+                }
+                //false causes action to stop running
+                if (colorSensor.alpha() > 125 || timer.getElapsedTimeSeconds() > 5){
+                    //sample detected or time exceeds by 5 seconds
+                    leftIntake.setPower(0);
+                    rightIntake.setPower(0);
+                    return false;
+                } else {
+                    return true;
+                }
+            }
         };
     }
 }

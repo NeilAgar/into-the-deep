@@ -34,9 +34,9 @@ public final class BucketAuton extends LinearOpMode {
         drive.outtakeFlipper.setPosition(1);
 
         Pose start = new Pose(0, 0); // 137, 36
-        Pose bucket = new Pose(9, 19);
-        Pose sampleOnePos = new Pose(17.5, 16.5);
-        Pose bucketOnePos = new Pose(9, 20);
+        Pose bucket = new Pose(6.7, 21.3);
+        Pose sampleOnePos = new Pose(19.8, 14.25);
+        Pose bucketOnePos = new Pose(6.7, 21.3);
         Pose sampleTwoPos = new Pose(16.35, 16.55);
         Pose bucketTwoPos = new Pose(14.55, 18.75);
 
@@ -90,7 +90,7 @@ public final class BucketAuton extends LinearOpMode {
                         new Point(bucketOnePos),
                         new Point(14.65, 0, Point.CARTESIAN),
                         new Point(50, 12, Point.CARTESIAN),
-                        new Point(50, -6, Point.CARTESIAN)
+                        new Point(50, -16, Point.CARTESIAN)
                 ))
                 .setConstantHeadingInterpolation(Math.toRadians(90))
                 .build();
@@ -102,10 +102,11 @@ public final class BucketAuton extends LinearOpMode {
 
         Actions.runBlocking(new SequentialAction(
             drive.resetOuttakeSlide(),
+            drive.setFollowerMaxPower(0.6),
 
             new ParallelAction(
                 drive.followPath(bucketInit),
-                drive.raiseSlide()
+                drive.raiseSlide(-3100)
             ),
             drive.outtake(),
 
@@ -120,7 +121,7 @@ public final class BucketAuton extends LinearOpMode {
 
             new ParallelAction(
                 drive.followPath(bucketOne),
-                drive.raiseSlide()
+                drive.raiseSlide(-3100)
             ),
             drive.outtake(),
 
@@ -141,7 +142,7 @@ public final class BucketAuton extends LinearOpMode {
 
             new ParallelAction(
                 new SequentialAction(
-                    drive.setFollowerMaxPower(0.6),
+                    drive.setFollowerMaxPower(0.4),
                     drive.followPath(park)
                 ),
                 drive.dropSlide(),
