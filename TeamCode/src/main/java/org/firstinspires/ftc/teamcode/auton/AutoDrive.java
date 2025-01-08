@@ -7,6 +7,8 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
+import com.pedropathing.pathgen.Path;
+import com.pedropathing.util.Constants;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,6 +20,9 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.pathgen.MathFunctions;
 import com.pedropathing.pathgen.PathChain;
 import com.pedropathing.util.Timer;
+
+import pedroPathing.constants.FConstants;
+import pedroPathing.constants.LConstants;
 
 public class AutoDrive {
 
@@ -34,6 +39,7 @@ public class AutoDrive {
     public ColorSensor colorSensor;
 
     public AutoDrive(HardwareMap hardwareMap) {
+        Constants.setConstants(FConstants.class, LConstants.class);
         follower = new Follower(hardwareMap);
 
         outtakeSlide = hardwareMap.dcMotor.get("outtakeSlide");
@@ -178,7 +184,7 @@ public class AutoDrive {
     public Action specimenCycle(PathChain barCycle, PathChain collectCycle, boolean isFinalCycle) {
         return new SequentialAction(
             new ParallelAction(
-                followPath(barCycle),
+                followPath(barCycle, true),
                 moveSlide(-1900)
             ),
             new ParallelAction(
@@ -188,7 +194,7 @@ public class AutoDrive {
                     moveClaw(0.3, 0.53)
                 )
             ),
-            followPath(collectCycle),
+            followPath(collectCycle, true),
             new SleepAction(0.5),
             moveClaw(isFinalCycle ? 0.3 : 0.65, isFinalCycle ? 0.53 : 0.2)
         );
@@ -204,14 +210,34 @@ public class AutoDrive {
 
     // Follower Actions:
 
-    public Action followPath(PathChain path) {
+    public Action followPath(PathChain path, boolean holdEnd) {
         return new Action() {
             private boolean initialized = false;
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    follower.followPath(path);
+                    follower.followPath(path, holdEnd);
+                    initialized = true;
+                }
+
+                updateFollower();
+                follower.getDashboardPoseTracker().update();
+                updateFollowerTelemetry(packet);
+
+                return follower.isBusy();
+            }
+        };
+    }
+
+    public Action followPath(Path path, boolean holdEnd) {
+        return new Action() {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet) {
+                if (!initialized) {
+                    follower.followPath(path, holdEnd);
                     initialized = true;
                 }
 

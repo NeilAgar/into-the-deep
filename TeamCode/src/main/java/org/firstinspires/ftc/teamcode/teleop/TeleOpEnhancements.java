@@ -1,61 +1,71 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.localization.Pose;
+import com.pedropathing.util.Constants;
+import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import com.acmerobotics.dashboard.config.Config;
+import pedroPathing.constants.FConstants;
+import pedroPathing.constants.LConstants;
 
-@Config
-@Disabled
-@TeleOp(name = "Drive Enhanced Teleop (Android Studio)", group = "Teleop")
-public class TeleOpEnhancements extends LinearOpMode {
+/**
+ * This is an example teleop that showcases movement and robot-centric driving.
+ *
+ * @author Baron Henderson - 20077 The Indubitables
+ * @version 2.0, 12/30/2024
+ */
+
+@TeleOp(name = "Example Robot-Centric Teleop", group = "Examples")
+public class TeleOpEnhancements extends OpMode {
     private Follower follower;
+    private final Pose startPose = new Pose(0,0,0);
 
-    private MultipleTelemetry telemetryA;
-
-    private DcMotorEx leftFront;
-    private DcMotorEx leftRear;
-    private DcMotorEx rightFront;
-    private DcMotorEx rightRear;
-
+    /** This method is call once when init is played, it initializes the follower **/
     @Override
-    public void runOpMode() throws InterruptedException {
-        telemetryA = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-
+    public void init() {
+        Constants.setConstants(FConstants.class, LConstants.class);
         follower = new Follower(hardwareMap);
+        follower.setStartingPose(startPose);
+    }
 
-        leftFront = hardwareMap.get(DcMotorEx.class, FollowerConstants.leftFrontMotorName);
-        leftRear = hardwareMap.get(DcMotorEx.class, FollowerConstants.leftRearMotorName);
-        rightRear = hardwareMap.get(DcMotorEx.class, FollowerConstants.rightRearMotorName);
-        rightFront = hardwareMap.get(DcMotorEx.class, FollowerConstants.rightFrontMotorName);
+    /** This method is called continuously after Init while waiting to be started. **/
+    @Override
+    public void init_loop() {
+    }
 
-        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+    /** This method is called once at the start of the OpMode. **/
+    @Override
+    public void start() {
+        follower.startTeleopDrive();
+    }
 
-        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    /** This is the main loop of the opmode and runs continuously after play **/
+    @Override
+    public void loop() {
 
-        waitForStart();
+        /* Update Pedro to move the robot based on:
+        - Forward/Backward Movement: -gamepad1.left_stick_y
+        - Left/Right Movement: -gamepad1.left_stick_x
+        - Turn Left/Right Movement: -gamepad1.right_stick_x
+        - Robot-Centric Mode: true
+        */
 
-        if (isStopRequested()) return;
+        follower.setTeleOpMovementVectors(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
+        follower.update();
 
-        while (opModeIsActive()) {
-            follower.setTeleOpMovementVectors(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, false);
-            follower.update();
+        /* Telemetry Outputs of our Follower */
+        telemetry.addData("X", follower.getPose().getX());
+        telemetry.addData("Y", follower.getPose().getY());
+        telemetry.addData("Heading in Degrees", Math.toDegrees(follower.getPose().getHeading()));
 
-            if (gamepad1.options) {
-                follower.resetOffset();
-            }
-        }
+        /* Update Telemetry to the Driver Hub */
+        telemetry.update();
+
+    }
+
+    /** We do not use this because everything automatically should disable **/
+    @Override
+    public void stop() {
     }
 }

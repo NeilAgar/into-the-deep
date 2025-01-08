@@ -10,11 +10,13 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import com.pedropathing.pathgen.Point;
 import com.pedropathing.pathgen.BezierCurve;
 import com.pedropathing.pathgen.BezierLine;
-import com.pedropathing.pathgen.PathChain;
-import com.pedropathing.pathgen.Point;
 import com.pedropathing.localization.Pose;
+import com.pedropathing.pathgen.Path;
+import com.pedropathing.pathgen.PathChain;
+import com.pedropathing.util.Timer;
 
 
 @Config
@@ -109,14 +111,14 @@ public final class BucketAuton extends LinearOpMode {
             drive.setFollowerMaxPower(0.6),
 
             new ParallelAction(
-                drive.followPath(bucketInit),
+                drive.followPath(bucketInit, true),
                 drive.moveSlide(-3100)
             ),
             drive.flipOuttake(),
 
             new ParallelAction(
                 new SequentialAction(
-                    drive.followPath(sampleOne),
+                    drive.followPath(sampleOne, true),
                     drive.intake()
                 ),
                 drive.moveSlide(0)
@@ -124,7 +126,7 @@ public final class BucketAuton extends LinearOpMode {
             drive.transfer(),
 
             new ParallelAction(
-                drive.followPath(bucketOne),
+                drive.followPath(bucketOne, true),
                 drive.moveSlide(-3100)
             ),
             drive.flipOuttake(),
@@ -132,7 +134,7 @@ public final class BucketAuton extends LinearOpMode {
             new ParallelAction(
                 new SequentialAction(
                     drive.setFollowerMaxPower(0.5),
-                    drive.followPath(park)
+                    drive.followPath(park, true)
                 ),
                 drive.moveSlide(0),
                 new SequentialAction(

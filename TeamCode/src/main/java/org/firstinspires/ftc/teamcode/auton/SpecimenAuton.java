@@ -10,11 +10,13 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import com.pedropathing.pathgen.Point;
 import com.pedropathing.pathgen.BezierCurve;
 import com.pedropathing.pathgen.BezierLine;
-import com.pedropathing.pathgen.PathChain;
-import com.pedropathing.pathgen.Point;
 import com.pedropathing.localization.Pose;
+import com.pedropathing.pathgen.Path;
+import com.pedropathing.pathgen.PathChain;
+import com.pedropathing.util.Timer;
 
 
 @Config
@@ -142,7 +144,7 @@ public final class SpecimenAuton extends LinearOpMode {
             new ParallelAction(
                 new SequentialAction(
                     new SleepAction(1),
-                    drive.followPath(barInit)
+                    drive.followPath(barInit, true)
                 ),
                 drive.moveSlide(-1900)
             ),
@@ -154,9 +156,9 @@ public final class SpecimenAuton extends LinearOpMode {
                 )
             ),
 
-            drive.followPath(pushSamples),
+            drive.followPath(pushSamples, true),
 
-            drive.followPath(collectPreload),
+            drive.followPath(collectPreload, true),
             new SleepAction(0.5),
             drive.moveClaw(0.65, 0.2),
 
