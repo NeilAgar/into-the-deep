@@ -10,11 +10,11 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
+import com.pedropathing.pathgen.BezierCurve;
+import com.pedropathing.pathgen.BezierLine;
+import com.pedropathing.pathgen.PathChain;
+import com.pedropathing.pathgen.Point;
+import com.pedropathing.localization.Pose;
 
 
 @Config
@@ -22,11 +22,13 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 public final class BucketAuton extends LinearOpMode {
     AutoDrive drive;
 
+    MultipleTelemetry telemetryA;
+
     PathChain bucketInit, sampleOne, bucketOne, sampleTwo, bucketTwo, park;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetryA = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new AutoDrive(hardwareMap);
 
         drive.intakeExtension.setPosition(1);
@@ -35,10 +37,12 @@ public final class BucketAuton extends LinearOpMode {
 
         Pose start = new Pose(0, 0); // 137, 36
         Pose bucket = new Pose(6.7, 21.3);
-        Pose sampleOnePos = new Pose(19.8, 14.25);
+        Pose sampleOnePos = new Pose(21, 14.25);
         Pose bucketOnePos = new Pose(6.7, 21.3);
         Pose sampleTwoPos = new Pose(16.35, 16.55);
         Pose bucketTwoPos = new Pose(14.55, 18.75);
+
+        drive.follower.setStartingPose(new Pose(0, 0, 0));
 
         bucketInit = drive.follower.pathBuilder()
                 .addPath(new BezierCurve(
@@ -95,8 +99,8 @@ public final class BucketAuton extends LinearOpMode {
                 .setConstantHeadingInterpolation(Math.toRadians(90))
                 .build();
 
-        telemetry.addLine("Ready to start!");
-        telemetry.update();
+        telemetryA.addLine("Ready to start!");
+        telemetryA.update();
 
         waitForStart();
 
@@ -106,46 +110,31 @@ public final class BucketAuton extends LinearOpMode {
 
             new ParallelAction(
                 drive.followPath(bucketInit),
-                drive.raiseSlide(-3100)
+                drive.moveSlide(-3100)
             ),
-            drive.outtake(),
+            drive.flipOuttake(),
 
             new ParallelAction(
                 new SequentialAction(
                     drive.followPath(sampleOne),
                     drive.intake()
                 ),
-                drive.dropSlide()
+                drive.moveSlide(0)
             ),
             drive.transfer(),
 
             new ParallelAction(
                 drive.followPath(bucketOne),
-                drive.raiseSlide(-3100)
+                drive.moveSlide(-3100)
             ),
-            drive.outtake(),
-
-//            new ParallelAction(
-//                new SequentialAction(
-//                    drive.followPath(sampleTwo),
-//                    drive.intake()
-//                ),
-//                drive.dropSlide()
-//            ),
-//            drive.transfer(),
-//
-//            new ParallelAction(
-//                drive.followPath(bucketTwo),
-//                drive.raiseSlide()
-//            ),
-//            drive.outtake(),
+            drive.flipOuttake(),
 
             new ParallelAction(
                 new SequentialAction(
-                    drive.setFollowerMaxPower(0.4),
+                    drive.setFollowerMaxPower(0.5),
                     drive.followPath(park)
                 ),
-                drive.dropSlide(),
+                drive.moveSlide(0),
                 new SequentialAction(
                     drive.setServoPos(drive.wrist, 1),
                     drive.setServoPos(drive.outtakeFlipper, 0),
@@ -153,7 +142,7 @@ public final class BucketAuton extends LinearOpMode {
                     drive.setServoPos(drive.wrist, 0)
                 )
             ),
-            new SleepAction(30) // ensures bucket flipper powered until auto ends
+            new SleepAction(30)
         ));
     }
 }

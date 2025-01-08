@@ -10,23 +10,25 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
+import com.pedropathing.pathgen.BezierCurve;
+import com.pedropathing.pathgen.BezierLine;
+import com.pedropathing.pathgen.PathChain;
+import com.pedropathing.pathgen.Point;
+import com.pedropathing.localization.Pose;
 
 
 @Config
-@Autonomous(name = "Specimen Side Auton",group = "Autonomous")
+@Autonomous(name = "Specimen Side Auton", group = "Autonomous")
 public final class SpecimenAuton extends LinearOpMode {
     AutoDrive drive;
 
-    PathChain barInit, specimenOne, firstMoveCloser, moveCloser, barOne, park, firstPickupMid, firstPickupPush, barTwo;
+    MultipleTelemetry telemetryA;
+
+    PathChain barInit, pushSamples, collectPreload, barCycle, collectCycle;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetryA = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new AutoDrive(hardwareMap);
 
         drive.intakeExtension.setPosition(1);
@@ -35,181 +37,132 @@ public final class SpecimenAuton extends LinearOpMode {
         drive.rightClaw.setPosition(0.3);
         drive.leftClaw.setPosition(0.53);
 
-        Pose start = new Pose(0, 0); // 137, 36
-        Pose submersible = new Pose(-26, -8);
-        Pose humanPlayerPos = new Pose(-2, 21);
-        Pose minutePlayerPos = new Pose(1.25, 21);
-        Pose submersibleOne = new Pose(-25.25, -10);
-        Pose enterSpecimenArea = new Pose(-48, 31);
-        Pose endPushSpecimen = new Pose(-2, 31);
-        Pose observation = new Pose(0, 30);
-        Pose submersibleTwo = new Pose(-25.25, -14);
+        drive.follower.setStartingPose(new Pose(9, 63));
 
         barInit = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(start),
-                new Point(-12, 0, Point.CARTESIAN),
-                new Point(submersible)
-            ))
+            .addPath(
+                // Line 1
+                new BezierCurve(
+                    new Point(9.000, 63.000, Point.CARTESIAN),
+                    new Point(21.000, 63.000, Point.CARTESIAN),
+                    new Point(36.000, 78.000, Point.CARTESIAN)
+                )
+            )
             .setConstantHeadingInterpolation(Math.toRadians(0))
             .build();
 
-        specimenOne = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(submersibleOne),
-                new Point(-8, -8, Point.CARTESIAN),
-                new Point(humanPlayerPos)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(180))
-            .build();
-
-        moveCloser = drive.follower.pathBuilder()
-            .addPath(new BezierLine(
-                new Point(humanPlayerPos),
-                new Point(minutePlayerPos)
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(180))
-            .build();
-
-        firstMoveCloser = drive.follower.pathBuilder()
-            .addPath(new BezierLine(
-                new Point(endPushSpecimen),
-                new Point(minutePlayerPos)
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(180))
-            .build();
-
-        barOne = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(minutePlayerPos),
-                new Point(-12, 10, Point.CARTESIAN),
-                new Point(submersibleOne)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(0))
-            .build();
-
-        firstPickupMid = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(submersible),
-                new Point(-12, 18, Point.CARTESIAN),
-                new Point(-40, 18, Point.CARTESIAN),
-                new Point(enterSpecimenArea)
-            ))
+        pushSamples = drive.follower.pathBuilder()
+            .addPath(
+                // Line 2
+                new BezierCurve(
+                    new Point(36.000, 78.000, Point.CARTESIAN),
+                    new Point(6.000, 18.000, Point.CARTESIAN),
+                    new Point(84.000, 40.000, Point.CARTESIAN),
+                    new Point(60.000, 24.000, Point.CARTESIAN)
+                )
+            )
+            .setConstantHeadingInterpolation(Math.toRadians(0))
+            .addPath(
+                // Line 3
+                new BezierLine(
+                    new Point(60.000, 24.000, Point.CARTESIAN),
+                    new Point(7.000, 24.000, Point.CARTESIAN)
+                )
+            )
+            .setConstantHeadingInterpolation(Math.toRadians(0))
+            .addPath(
+                // Line 4
+                new BezierCurve(
+                    new Point(7.000, 24.000, Point.CARTESIAN),
+                    new Point(132.000, 20.000, Point.CARTESIAN),
+                    new Point(72.000, 15.000, Point.CARTESIAN),
+                    new Point(7.000, 14.000, Point.CARTESIAN)
+                )
+            )
+            .setConstantHeadingInterpolation(Math.toRadians(0))
+            .addPath(
+                // Line 5
+                new BezierCurve(
+                    new Point(7.000, 14.000, Point.CARTESIAN),
+                    new Point(132.000, 17.000, Point.CARTESIAN),
+                    new Point(72.000, 8.000, Point.CARTESIAN),
+                    new Point(7.000, 9.000, Point.CARTESIAN)
+                )
+            )
             .setConstantHeadingInterpolation(Math.toRadians(0))
             .build();
 
-        firstPickupPush = drive.follower.pathBuilder()
-            .addPath(new BezierLine(
-                new Point(enterSpecimenArea),
-                new Point(endPushSpecimen)
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(0))
+        collectPreload = drive.follower.pathBuilder()
+            .addPath(
+                // Line 6
+                new BezierCurve(
+                    new Point(7.000, 9.000, Point.CARTESIAN),
+                    new Point(66.000, 24.000, Point.CARTESIAN),
+                    new Point(7.000, 24.000, Point.CARTESIAN)
+                )
+            )
+            .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(180), 0.5)
             .build();
 
-        barTwo = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(minutePlayerPos),
-                new Point(-12, 10, Point.CARTESIAN),
-                new Point(submersibleTwo)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(0))
+        barCycle = drive.follower.pathBuilder()
+            .addPath(
+                // Line 7
+                new BezierCurve(
+                    new Point(7.000, 24.000, Point.CARTESIAN),
+                    new Point(24.000, 24.000, Point.CARTESIAN),
+                    new Point(36.000, 90.000, Point.CARTESIAN),
+                    new Point(36.000, 64.000, Point.CARTESIAN)
+                )
+            )
+            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(0), 0.3)
             .build();
 
-        park = drive.follower.pathBuilder()
-            .addPath(new BezierCurve(
-                new Point(submersibleTwo),
-                new Point(-12, -10, Point.CARTESIAN),
-                new Point(observation)
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(0))
+        collectCycle = drive.follower.pathBuilder()
+            .addPath(
+                // Line 8
+                new BezierCurve(
+                    new Point(36.000, 64.000, Point.CARTESIAN),
+                    new Point(24.000, 67.000, Point.CARTESIAN),
+                    new Point(24.000, 24.000, Point.CARTESIAN),
+                    new Point(7.000, 24.000, Point.CARTESIAN)
+                )
+            )
+            .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(180), 0.3)
             .build();
 
-        telemetry.addLine("Ready to start!");
-        telemetry.update();
+        telemetryA.addLine("Ready to start!");
+        telemetryA.update();
 
         waitForStart();
 
         Actions.runBlocking(new SequentialAction(
-            drive.closeClaw(),
-            new SleepAction(1),
+            drive.moveClaw(0.65, 0.2),
+            new SleepAction(0.75),
 
             new ParallelAction(
                 new SequentialAction(
                     new SleepAction(1),
                     drive.followPath(barInit)
                 ),
-                drive.raiseSlide(-2000)
+                drive.moveSlide(-1900)
             ),
-
-            new SleepAction(0.5),
             new ParallelAction(
-                drive.dropSlide(),
+                drive.moveSlide(-135),
                 new SequentialAction(
                     new SleepAction(0.5),
-                    drive.openClaw()
+                    drive.moveClaw(0.3, 0.53)
                 )
             ),
 
-            drive.followPath(firstPickupMid),
-            new ParallelAction(
-                drive.raiseSlide(-135),
-                drive.followPath(firstPickupPush)
-            ),
+            drive.followPath(pushSamples),
+
+            drive.followPath(collectPreload),
             new SleepAction(0.5),
-            new SequentialAction(
-                drive.setFollowerMaxPower(0.3),
-                drive.followPath(firstMoveCloser)
-            ),
-            drive.closeClaw(),
-            drive.setFollowerMaxPower(1),
+            drive.moveClaw(0.65, 0.2),
 
-            new ParallelAction(
-                new SequentialAction(
-                    new SleepAction(1),
-                    drive.followPath(barOne)
-                ),
-                drive.raiseSlide(-2000)
-            ),
-
-            new SleepAction(0.5),
-            new ParallelAction(
-                drive.dropSlide(),
-                new SequentialAction(
-                    new SleepAction(0.5),
-                    drive.openClaw()
-                )
-            ),
-
-            new ParallelAction(
-                drive.raiseSlide(-135),
-                drive.followPath(specimenOne)
-            ),
-            new SleepAction(0.5),
-            new SequentialAction(
-                drive.setFollowerMaxPower(0.3),
-                drive.followPath(moveCloser)
-            ),
-            drive.closeClaw(),
-            drive.setFollowerMaxPower(1),
-
-            new ParallelAction(
-                new SequentialAction(
-                    new SleepAction(1),
-                    drive.followPath(barTwo)
-                ),
-                drive.raiseSlide(-2000)
-            ),
-
-            new SleepAction(0.5),
-            new ParallelAction(
-                drive.dropSlide(),
-                new SequentialAction(
-                    new SleepAction(0.5),
-                    drive.openClaw()
-                )
-            ),
-
-            drive.followPath(park)
+            drive.specimenCycle(barCycle, collectCycle, false),
+            drive.specimenCycle(barCycle, collectCycle, false),
+            drive.specimenCycle(barCycle, collectCycle, true)
         ));
     }
 }
